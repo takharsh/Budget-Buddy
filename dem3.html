@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BudgetBuddy - Dashboard</title>
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background: linear-gradient(to right, #e0f7fa, #e1f5fe);
+  animation: fadeIn 0.6s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+header {
+  padding: 1.5rem;
+  font-size: 2rem;
+  background: linear-gradient(to right, #2c3e50, #3498db);
+  color: white;
+  text-align: center;
+}
+
+.container {
+  max-width: 1000px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: white;
+  border-radius: 15px;
+}
+
+.summary, .actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.summary div {
+  flex: 1 1 30%;
+  padding: 1rem;
+  text-align: center;
+  border-radius: 12px;
+  background: #f1f8ff;
+}
+
+.summary h3 {
+  font-size: 1.5rem;
+  margin-top: 5px;
+}
+
+.actions button {
+  padding: 1rem;
+  border: none;
+  background: #3498db;
+  color: white;
+  border-radius: 10px;
+  cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<header>💸 BudgetBuddy Dashboard</header>
+
+<div class="container">
+
+<h2>Dashboard</h2>
+
+<div class="summary">
+  <div><strong>Total Budget</strong><h3 id="totalBudget">₹ 0</h3></div>
+  <div><strong>Total Spent</strong><h3 id="totalSpent">₹ 0</h3></div>
+  <div><strong>Remaining</strong><h3 id="remaining">₹ 0</h3></div>
+</div>
+
+<div class="actions">
+  <button onclick="setBudget()">💼 Set Budget</button>
+  <button onclick="refreshData()">🔄 Refresh</button>
+</div>
+
+</div>
+
+<script>
+let totalBudget = 10000;
+
+// Load everything
+window.onload = function () {
+  loadData();
+};
+
+// Load data from localStorage
+function loadData() {
+  const storedBudget = localStorage.getItem('totalBudget');
+  const expenses = JSON.parse(localStorage.getItem('expenses')) || [];
+
+  if (storedBudget) totalBudget = parseFloat(storedBudget);
+
+  let totalSpent = 0;
+  expenses.forEach(e => totalSpent += e.amount);
+
+  updateSummary(totalSpent);
+}
+
+// Update summary
+function updateSummary(totalSpent) {
+  document.getElementById('totalBudget').innerText = `₹ ${totalBudget}`;
+  document.getElementById('totalSpent').innerText = `₹ ${totalSpent}`;
+  document.getElementById('remaining').innerText = `₹ ${totalBudget - totalSpent}`;
+}
+
+// Set Budget
+function setBudget() {
+  const newBudget = prompt("Enter budget:", totalBudget);
+
+  if (newBudget !== null) {
+    const value = parseFloat(newBudget);
+
+    if (!isNaN(value) && value > 0) {
+      totalBudget = value;
+      localStorage.setItem('totalBudget', totalBudget);
+      loadData();
+    }
+  }
+}
+
+// Refresh button
+function refreshData() {
+  loadData();
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BudgetBuddy Advanced</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      display: flex;
+      background: #f4f7fa;
+    }
+
+    .sidebar {
+      width: 250px;
+      background: #2c3e50;
+      color: white;
+      padding: 1.5rem;
+      height: 100vh;
+      position: fixed;
+    }
+
+    .sidebar h2 { text-align: center; margin-bottom: 1rem; }
+
+    .sidebar a {
+      display: block;
+      padding: 10px;
+      margin: 6px 0;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .sidebar a:hover, .sidebar a.active {
+      background: #3498db;
+    }
+
+    .main {
+      margin-left: 250px;
+      padding: 2rem;
+      width: 100%;
+    }
+
+    .content-section { display: none; }
+    .content-section.active { display: block; }
+
+    input, button {
+      padding: 8px;
+      margin: 5px;
+      border-radius: 6px;
+    }
+
+    button {
+      background: #3498db;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    table {
+      width: 100%;
+      margin-top: 10px;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid #ccc;
+    }
+
+    iframe {
+      width: 100%;
+      height: 300px;
+      border-radius: 10px;
+      margin-bottom: 15px;
+      border: none;
+    }
+
+    .summary-box {
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #3498db;
+      color: white;
+      padding: 10px;
+      border-radius: 6px;
+      opacity: 0;
+      transition: 0.3s;
+    }
+
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+
+<body>
+
+<div class="sidebar">
+  <h2>💸 BudgetBuddy</h2>
+
+  <a class="active" onclick="navigateTo('dashboard')">📊 Dashboard</a>
+  <a onclick="navigateTo('addExpense')">➕ Add Expense</a>
+  <a onclick="navigateTo('history')">📄 History</a>
+  <a onclick="navigateTo('insights')">📈 Insights</a>
+</div>
+
+<div class="main">
+
+  <!-- ✅ DASHBOARD SECTION -->
+  <div id="dashboardSection" class="content-section active">
+    <h2>📊 Dashboard</h2>
+
+    <!-- 🔗 Connected file -->
+    <iframe src="dem3.html"></iframe>
+
+    <!-- Summary -->
+    <div class="summary-box">
+      <h3>📘 Expense Summary</h3>
+      <ul id="summaryList"></ul>
+    </div>
+  </div>
+
+  <!-- Add Expense -->
+  <div id="addExpenseSection" class="content-section">
+    <h2>Add Expense</h2>
+
+    <input type="date" id="date">
+    <input type="text" id="category" placeholder="Category">
+    <input type="number" id="amount" placeholder="Amount">
+    <input type="text" id="note" placeholder="Note">
+    <button onclick="addExpense()">Add</button>
+
+    <h3>Total: ₹ <span id="totalAmount">0</span></h3>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Category</th>
+          <th>Amount</th>
+          <th>Note</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="expenseTable"></tbody>
+    </table>
+  </div>
+
+  <!-- History -->
+  <div id="historySection" class="content-section">
+    <h2>History</h2>
+    <ul id="historyList"></ul>
+  </div>
+
+  <!-- Insights -->
+  <div id="insightsSection" class="content-section">
+    <h2>Insights</h2>
+    <canvas id="chart"></canvas>
+  </div>
+
+</div>
+
+<div class="toast" id="toast">Saved</div>
+
+<script>
+let expenses = [];
+let chart;
+
+/* Navigation */
+function navigateTo(section) {
+  document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+  document.getElementById(section + 'Section').classList.add('active');
+
+  if (section === "history") loadHistory();
+  if (section === "insights") drawChart();
+  if (section === "dashboard") updateSummary();
+}
+
+/* Toast */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.innerText = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+/* Add Expense */
+function addExpense() {
+  const date = document.getElementById('date').value;
+  const category = document.getElementById('category').value;
+  const amount = parseFloat(document.getElementById('amount').value);
+  const note = document.getElementById('note').value;
+
+  if (!date || !category || isNaN(amount)) {
+    showToast("Enter valid data");
+    return;
+  }
+
+  expenses.push({ date, category, amount, note });
+
+  updateTable();
+  updateLocalStorage();
+  clearForm();
+  showToast("Saved!");
+}
+
+/* Table */
+function updateTable() {
+  const tbody = document.getElementById('expenseTable');
+  tbody.innerHTML = "";
+  let total = 0;
+
+  expenses.forEach((e, i) => {
+    total += e.amount;
+    tbody.innerHTML += `
+      <tr>
+        <td>${e.date}</td>
+        <td>${e.category}</td>
+        <td>₹ ${e.amount}</td>
+        <td>${e.note}</td>
+        <td><button onclick="deleteExpense(${i})">Delete</button></td>
+      </tr>`;
+  });
+
+  document.getElementById('totalAmount').innerText = total;
+
+  updateSummary(); // 🔥 sync dashboard
+}
+
+/* Delete */
+function deleteExpense(i) {
+  expenses.splice(i, 1);
+  updateTable();
+  updateLocalStorage();
+}
+
+/* LocalStorage */
+function updateLocalStorage() {
+  localStorage.setItem('expenses', JSON.stringify(expenses));
+
+  const totalSpent = expenses.reduce((sum, e) => sum + e.amount, 0);
+  localStorage.setItem('totalSpent', totalSpent);
+}
+
+/* Load */
+function loadExpenses() {
+  const data = localStorage.getItem('expenses');
+  if (data) expenses = JSON.parse(data);
+  updateTable();
+}
+
+/* History */
+function loadHistory() {
+  const list = document.getElementById('historyList');
+  list.innerHTML = "";
+  expenses.forEach(e => {
+    list.innerHTML += `<li>${e.date} - ₹${e.amount} (${e.category})</li>`;
+  });
+}
+
+/* Chart */
+function drawChart() {
+  const ctx = document.getElementById('chart');
+  const data = {};
+
+  expenses.forEach(e => {
+    data[e.category] = (data[e.category] || 0) + e.amount;
+  });
+
+  if (chart) chart.destroy();
+
+  chart = new Chart(ctx, {
+    type: 'pie',
+    data: {
+      labels: Object.keys(data),
+      datasets: [{
+        data: Object.values(data)
+      }]
+    }
+  });
+}
+
+/* Dashboard Summary */
+function updateSummary() {
+  const list = document.getElementById('summaryList');
+  list.innerHTML = '';
+
+  if (expenses.length === 0) {
+    list.innerHTML = "<li>No data</li>";
+    return;
+  }
+
+  const total = expenses.reduce((sum,e)=>sum+e.amount,0);
+  const avg = (total / expenses.length).toFixed(2);
+
+  list.innerHTML += `<li>Total Spent: ₹ ${total}</li>`;
+  list.innerHTML += `<li>Average Expense: ₹ ${avg}</li>`;
+}
+
+/* Init */
+window.onload = loadExpenses;
+</script>
+
+</body>
+</html>

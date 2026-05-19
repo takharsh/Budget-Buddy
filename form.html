@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔐 BudgetBuddy Login</title>
+
+<style>
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:'Segoe UI',sans-serif;
+}
+
+body{
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:linear-gradient(135deg,#f5f7fa,#e4e7eb);
+}
+
+.container{
+  width:350px;
+  padding:35px 30px;
+  border-radius:20px;
+  background:#ffffff;
+  text-align:center;
+  box-shadow:0 10px 30px rgba(0,0,0,0.1);
+}
+
+.img{
+  width:100px;
+  border-radius:50%;
+  margin-bottom:15px;
+}
+
+h2{ color:#2c3e50; }
+
+p{
+  font-size:14px;
+  color:#777;
+  margin-bottom:15px;
+}
+
+.input{
+  width:100%;
+  padding:14px;
+  margin:10px 0;
+  border:1px solid #ccc;
+  border-radius:10px;
+  background:#f9f9f9;
+}
+
+.lgn{
+  width:100%;
+  padding:14px;
+  margin-top:10px;
+  border:none;
+  border-radius:10px;
+  background:#3498db;
+  color:white;
+  font-size:16px;
+  cursor:pointer;
+}
+
+.signup-btn{
+  margin-top:10px;
+  width:100%;
+  padding:12px;
+  border-radius:10px;
+  border:1px solid #ccc;
+  background:#ecf0f1;
+  cursor:pointer;
+}
+
+.link{
+  font-size:13px;
+  color:#3498db;
+  cursor:pointer;
+  display:block;
+  margin-top:8px;
+}
+
+.extra{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-size:13px;
+  margin-top:5px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<img src="https://play-lh.googleusercontent.com/xX21Wwdhpj0ECGGkpj-cCi73nSU0R46oPbirY9uAO3iAuCiJ9nk9xp9gNI3I7NfEpbI" class="img">
+
+<h2>💸 BudgetBuddy</h2>
+<p id="formTitle">Manage your expenses smartly</p>
+
+<input type="email" id="emailInput" class="input" placeholder="Email">
+
+<div style="position:relative;">
+  <input type="password" id="passwordInput" class="input" placeholder="Password">
+  <span onclick="togglePassword()" 
+        style="position:absolute; right:10px; top:18px; cursor:pointer;">👁</span>
+</div>
+
+<input type="password" id="confirmPassword" class="input" placeholder="Confirm Password" style="display:none;">
+
+<div class="extra">
+  <label><input type="checkbox" id="remember"> Remember</label>
+  <span onclick="forgotPassword()" style="cursor:pointer;color:#3498db;">Forgot?</span>
+</div>
+
+<button class="lgn" id="mainBtn" onclick="login()">Login</button>
+
+<button class="signup-btn" onclick="toggleForm()">Create Account</button>
+
+<button class="signup-btn" onclick="googleLogin()">Sign in with Google</button>
+
+</div>
+
+<!-- FIREBASE -->
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup } 
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+/* CONFIG */
+const firebaseConfig = {
+  apiKey: "AIzaSyAfapSmhKOfFc3XYPPUuC0_VjZUrkpF1iI",
+  authDomain: "budget-buddy-expense-tra-fc124.firebaseapp.com",
+  projectId: "budget-buddy-expense-tra-fc124",
+  storageBucket: "budget-buddy-expense-tra-fc124.firebasestorage.app",
+  messagingSenderId: "405142539750",
+  appId: "1:405142539750:web:b851828e17f8c6420b5a27",
+  measurementId: "G-CJL1ST04H3"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+/* TOGGLE PASSWORD */
+window.togglePassword = function(){
+  const pass = document.getElementById("passwordInput");
+  pass.type = pass.type === "password" ? "text" : "password";
+};
+
+/* SWITCH LOGIN/SIGNUP */
+let isSignup=false;
+
+window.toggleForm = function(){
+  isSignup = !isSignup;
+
+  confirmPassword.style.display = isSignup ? "block" : "none";
+  mainBtn.innerText = isSignup ? "Create Account" : "Login";
+  mainBtn.onclick = isSignup ? signup : login;
+  formTitle.innerText = isSignup ? "Create your account" : "Manage your expenses smartly";
+};
+
+/* SIGNUP */
+window.signup = function(){
+  const email = document.getElementById("emailInput").value.trim();
+  const pass = document.getElementById("passwordInput").value.trim();
+  const confirm = document.getElementById("confirmPassword").value.trim();
+
+  if(pass !== confirm){
+    alert("Passwords do not match");
+    return;
+  }
+
+  createUserWithEmailAndPassword(auth,email,pass)
+  .then(()=>alert("Account Created"))
+  .catch(err=>alert(err.message));
+};
+
+/* LOGIN (UPDATED) */
+window.login = function(){
+  const email = document.getElementById("emailInput").value.trim();
+  const pass = document.getElementById("passwordInput").value.trim();
+
+  signInWithEmailAndPassword(auth,email,pass)
+  .then(()=>{
+    alert("Login Success");
+    window.location.href="harsh.html"; // ✅ redirect only after login
+  })
+  .catch(err=>alert(err.message));
+};
+
+/* GOOGLE LOGIN */
+window.googleLogin = function(){
+  const provider = new GoogleAuthProvider();
+
+  signInWithPopup(auth,provider)
+  .then(()=>{
+    alert("Google Login Success");
+    window.location.href="harsh.html";
+  })
+  .catch(err=>alert(err.message));
+};
+
+/* FORGOT PASSWORD */
+window.forgotPassword = function(){
+  const email = document.getElementById("emailInput").value;
+
+  if(!email){
+    alert("Enter email first");
+    return;
+  }
+
+  sendPasswordResetEmail(auth,email)
+  .then(()=>alert("Reset email sent"))
+  .catch(err=>alert(err.message));
+};
+
+</script>
+
+</body>
+</html>
